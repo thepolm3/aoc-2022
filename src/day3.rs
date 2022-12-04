@@ -57,7 +57,7 @@ fn part2(input: &[Vec<&str>]) -> Option<usize> {
                     .next()?,
             ))
         })
-        .filter(|x| x.is_some())
+        .filter(Option::is_some)
         .sum()
 }
 
