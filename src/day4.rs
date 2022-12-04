@@ -1,29 +1,21 @@
 use std::fs;
 
 use nom::{
-    bytes::complete::tag,
-    character::complete::line_ending,
-    combinator::map_res,
-    multi::separated_list0,
-    sequence::{terminated, tuple},
-    IResult,
+    bytes::complete::tag, character::complete::line_ending, combinator::map_res,
+    multi::separated_list0, sequence::separated_pair, IResult,
 };
 
 fn digit1(input: &str) -> IResult<&str, usize> {
     map_res(nom::character::complete::digit1, str::parse)(input)
 }
-fn parse_line(input: &str) -> IResult<&str, [(usize, usize); 2]> {
-    nom::combinator::map(
-        tuple((
-            terminated(digit1, tag("-")),
-            terminated(digit1, tag(",")),
-            terminated(digit1, tag("-")),
-            digit1,
-        )),
-        |(a, b, c, d)| [(a, b), (c, d)],
-    )(input)
+
+fn elf_range(input: &str) -> IResult<&str, (usize, usize)> {
+    separated_pair(digit1, tag("-"), digit1)(input)
 }
-fn parse(input: &str) -> IResult<&str, Vec<[(usize, usize); 2]>> {
+fn parse_line(input: &str) -> IResult<&str, ((usize, usize), (usize, usize))> {
+    separated_pair(elf_range, tag(","), elf_range)(input)
+}
+fn parse(input: &str) -> IResult<&str, Vec<((usize, usize), (usize, usize))>> {
     separated_list0(line_ending, parse_line)(input)
 }
 
@@ -35,17 +27,17 @@ pub fn main() {
     println!("4.2: {:?}", part2(&data));
 }
 
-fn part1(input: &[[(usize, usize); 2]]) -> usize {
+fn part1(input: &[((usize, usize), (usize, usize))]) -> usize {
     input
         .iter()
-        .filter(|[(a, b), (c, d)]| (a <= c && b >= d) || (c <= a && d >= b))
+        .filter(|((a, b), (c, d))| (a <= c && b >= d) || (c <= a && d >= b))
         .count()
 }
 
-fn part2(input: &[[(usize, usize); 2]]) -> usize {
+fn part2(input: &[((usize, usize), (usize, usize))]) -> usize {
     input
         .iter()
-        .filter(|[(a, b), (c, d)]| c <= b && a <= d)
+        .filter(|((a, b), (c, d))| c <= b && a <= d)
         .count()
 }
 
