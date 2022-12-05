@@ -24,7 +24,7 @@ fn digit1(input: &str) -> IResult<&str, usize> {
 
 fn item(input: &str) -> IResult<&str, Option<char>> {
     alt((
-        map(delimited(tag("["), anychar, tag("]")), |x| Some(x)),
+        map(delimited(tag("["), anychar, tag("]")), Some),
         map(count(tag(" "), 3), |_| None),
     ))(input)
 }
@@ -44,12 +44,11 @@ fn stacks(input: &str) -> IResult<&str, Vec<Vec<char>>> {
             tuple((line_ending, labels, line_ending)),
         ),
         |lists| {
-            let mut stacks = vec![vec![]; lists.last().and_then(|x| Some(x.len())).unwrap_or(0)];
+            let mut stacks = vec![vec![]; lists.last().map(Vec::len).unwrap_or(0)];
             for list in lists.into_iter() {
                 for (i, elem) in list.into_iter().enumerate() {
-                    match elem {
-                        Some(x) => stacks[i].push(x),
-                        None => {}
+                    if let Some(x) = elem {
+                        stacks[i].push(x);
                     }
                 }
             }
@@ -87,10 +86,10 @@ pub fn main() {
     println!("4.2: {}", part2(&stack, &instructions));
 }
 
-fn part1(stack: &Vec<Vec<char>>, instructions: &Vec<Move>) -> String {
+fn part1(stack: &[Vec<char>], instructions: &[Move]) -> String {
     let mut index = (1..=stack.len()).map(|x| (x, 0)).collect_vec();
 
-    for instruction in instructions.into_iter().rev() {
+    for instruction in instructions.iter().rev() {
         for (stack, depth) in &mut index {
             if *stack == instruction.from {
                 *depth += instruction.number;
@@ -108,9 +107,9 @@ fn part1(stack: &Vec<Vec<char>>, instructions: &Vec<Move>) -> String {
     index.iter().map(|(i, x)| stack[i - 1][*x]).collect()
 }
 
-fn part2(stack: &Vec<Vec<char>>, instructions: &Vec<Move>) -> String {
+fn part2(stack: &[Vec<char>], instructions: &[Move]) -> String {
     let mut index = (1..=stack.len()).map(|x| (x, 0)).collect_vec();
-    for instruction in instructions.into_iter().rev() {
+    for instruction in instructions.iter().rev() {
         for (stack, depth) in &mut index {
             if *stack == instruction.from {
                 *depth += instruction.number;
