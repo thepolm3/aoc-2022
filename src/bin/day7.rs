@@ -1,17 +1,15 @@
 use anyhow::{Context, Result};
-use itertools::Itertools;
 use std::collections::HashMap;
 use std::fmt::Display;
-use std::path::PathBuf;
-use std::{fs, path::Path};
+use std::fs;
 
 use nom::{
     branch::alt,
     bytes::complete::tag,
-    character::complete::{anychar, digit1, line_ending, not_line_ending},
+    character::complete::{digit1, line_ending, not_line_ending},
     combinator::map,
-    multi::{many0, separated_list1},
-    sequence::{preceded, separated_pair, tuple},
+    multi::separated_list1,
+    sequence::{preceded, separated_pair},
     IResult,
 };
 
