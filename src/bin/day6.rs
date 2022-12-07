@@ -81,7 +81,7 @@ mod tests {
         let res = test_input
             .lines()
             .filter(|line| !line.is_empty())
-            .map(|x| index_of_n_distinct::<4>(x).unwrap().1)
+            .map(|x| index_of_n_distinct::<14>(x).unwrap().1)
             .collect_vec();
         assert_eq!(res, vec![19, 23, 23, 29, 26]);
     }
