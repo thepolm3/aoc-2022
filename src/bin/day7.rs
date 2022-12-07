@@ -45,17 +45,16 @@ impl Display for Directory {
             "- {}\n  {}\n{}",
             self.name,
             self.files
-                .iter()
-                .map(|(_, x)| format!("{}", x))
+                .values()
+                .map(|x| format!("{x}"))
                 .collect::<Vec<String>>()
                 .join("\n  "),
             self.subdirectories
-                .iter()
-                .map(|(_, x)| format!("{}", x)
+                .values()
+                .flat_map(|x| format!("{x}")
                     .lines()
                     .map(|x| x.into())
                     .collect::<Vec<String>>())
-                .flatten()
                 .collect::<Vec<String>>()
                 .join("\n  "),
         )
@@ -87,10 +86,7 @@ impl Directory {
     fn walk_dirs(&self) -> Vec<&Directory> {
         Iterator::chain(
             std::iter::once(self),
-            self.subdirectories
-                .values()
-                .map(|d| d.walk_dirs())
-                .flatten(),
+            self.subdirectories.values().flat_map(|d| d.walk_dirs()),
         )
         .collect()
     }
