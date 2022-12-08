@@ -4,63 +4,68 @@ use std::fs;
 /// uses two pointers that converge for the left and right trees
 /// uses a [u8; N] for the tallest tree visible in column i from the top
 /// uses the lower 10 bits of a [u16; N] to store the trees visible from the bottom in columnn i
-fn part1<const N: usize>(rows: &[&[u8]]) -> u32 {
-    let mut bottom = [0; N]; //bitmask for trees visible from the bottom
-    let mut top = [0u8; N]; //max values visible from above
-    let [mut front_ptr, mut back_ptr]: [usize; 2];
-    let [mut front, mut current, mut back]: [u8; 3];
-    let mut include: bool;
-    let mut result = 0;
+fn part1<const N: usize>(forest: &[&[u8]]) -> u32 {
+    let mut bottom_edge_bitvec = [0; N]; //bitmask for trees visible from the bottom
+    let mut top_edge_tallest = [0u8; N]; //max values visible from above
+    let [mut front_index, mut back_index]: [usize; 2];
+    let [mut front_tree, mut current_tree, mut back_tree]: [u8; 3];
+    let mut is_edge: bool;
+    let mut edge_count = 0;
 
-    for row in rows {
-        (front_ptr, back_ptr, front, back) = (0, N - 1, b'0' - 1, b'0' - 1);
+    for treeline in forest {
+        (front_index, back_index, front_tree, back_tree) = (0, N - 1, b'0' - 1, b'0' - 1);
 
         // move the pointers together till they kiss
+        // we know in advance that we'll only have to do N moves
         for _ in 0..N {
-            include = false;
-            if front <= back {
-                current = row[front_ptr];
+            is_edge = false;
+            if front_tree <= back_tree {
+                current_tree = treeline[front_index];
 
                 //front check
-                if current > front {
-                    include = true;
-                    front = current;
+                if current_tree > front_tree {
+                    is_edge = true;
+                    front_tree = current_tree;
                 }
 
                 //top check
-                if current > top[front_ptr] {
-                    include = true;
-                    top[front_ptr] = current;
+                if current_tree > top_edge_tallest[front_index] {
+                    is_edge = true;
+                    top_edge_tallest[front_index] = current_tree;
                 }
 
                 //bottom check
-                bottom[front_ptr] &= !(1u16) << (current - b'0'); //zero out all trees at or below current height
-                bottom[front_ptr] |= (!include as u16) << (current - b'0'); //if !include, add back in tree at current height
+                bottom_edge_bitvec[front_index] &= !(1u16) << (current_tree - b'0'); //zero out all trees at or below current height
+                bottom_edge_bitvec[front_index] |= (!is_edge as u16) << (current_tree - b'0'); //if !include, add back in tree at current height
 
-                front_ptr += 1;
+                front_index += 1;
             } else {
                 // same logic but for back of list
-                current = row[back_ptr];
-                if current > back {
-                    include = true;
-                    back = current;
+                current_tree = treeline[back_index];
+                if current_tree > back_tree {
+                    is_edge = true;
+                    back_tree = current_tree;
                 }
-                if current > top[back_ptr] {
-                    include = true;
-                    top[back_ptr] = current;
+                if current_tree > top_edge_tallest[back_index] {
+                    is_edge = true;
+                    top_edge_tallest[back_index] = current_tree;
                 }
 
-                bottom[back_ptr] &= !(1u16) << (current - b'0');
-                bottom[back_ptr] |= (!include as u16) << (current - b'0');
-                back_ptr -= 1;
+                bottom_edge_bitvec[back_index] &= !(1u16) << (current_tree - b'0');
+                bottom_edge_bitvec[back_index] |= (!is_edge as u16) << (current_tree - b'0');
+                back_index -= 1;
             }
 
-            if include {
-                result += 1;
+            if is_edge {
+                edge_count += 1;
             }
         }
     }
-    bottom.into_iter().map(|x| x.count_ones()).sum::<u32>() + result
+    bottom_edge_bitvec
+        .into_iter()
+        .map(|x| x.count_ones())
+        .sum::<u32>()
+        + edge_count
 }
 
 fn scenic_score(rows: &[&[u8]], (start_x, start_y): (isize, isize)) -> isize {
