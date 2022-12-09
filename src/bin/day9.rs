@@ -1,6 +1,7 @@
 use anyhow::Result;
 use itertools::chain;
 use itertools::Itertools;
+use std::cell::Cell;
 use std::fs;
 
 fn head(input: &str) -> Vec<(isize, isize)> {
@@ -15,7 +16,8 @@ fn head(input: &str) -> Vec<(isize, isize)> {
                     .expect("bad line")
             })
             .flat_map(|(dir, length)| {
-                (0..length).map(move |_| {
+                let mut result = Vec::new();
+                for _ in 0..length {
                     match dir {
                         "L" => x -= 1,
                         "R" => x += 1,
@@ -23,8 +25,9 @@ fn head(input: &str) -> Vec<(isize, isize)> {
                         "U" => y += 1,
                         _ => panic!("parse error LRUD"),
                     };
-                    (x, y)
-                })
+                    result.push((x, y));
+                }
+                result.into_iter()
             })
     ]
     .collect()
@@ -87,6 +90,6 @@ mod tests {
         assert_eq!(part2(&input, 10), 1);
         let input = fs::read_to_string("test_inputs/day9-2.txt").unwrap();
 
-        assert_eq!(part2(&input, 36), 1);
+        assert_eq!(part2(&input, 10), 36);
     }
 }
