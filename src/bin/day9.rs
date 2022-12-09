@@ -1,7 +1,6 @@
 use anyhow::Result;
 use itertools::chain;
 use itertools::Itertools;
-use std::convert::identity;
 use std::fs;
 
 fn head(input: &str) -> Vec<(isize, isize)> {
@@ -10,7 +9,7 @@ fn head(input: &str) -> Vec<(isize, isize)> {
         input
             .lines()
             .map(|line| {
-                line.split_once(" ")
+                line.split_once(' ')
                     .map(|(a, b)| (a, b.parse::<usize>().expect("parse error digit")))
                     .expect("bad line")
             })
@@ -30,7 +29,7 @@ fn head(input: &str) -> Vec<(isize, isize)> {
                         .collect_vec(),
                 )
             })
-            .flatten() //head positions
+            .flatten()
     ]
     .collect()
 }
@@ -39,7 +38,7 @@ fn tail(head: impl IntoIterator<Item = (isize, isize)>) -> Vec<(isize, isize)> {
     chain![
         [(0, 0)],
         head.into_iter()
-            .scan((0, 0), |(t_x, t_y), h_position @ (h_x, h_y)| {
+            .scan((0, 0), |(t_x, t_y), (h_x, h_y)| {
                 Some(if h_x.abs_diff(*t_x).max(h_y.abs_diff(*t_y)) > 1 {
                     *t_x += h_x.cmp(t_x) as isize;
                     *t_y += h_y.cmp(t_y) as isize;
@@ -48,10 +47,11 @@ fn tail(head: impl IntoIterator<Item = (isize, isize)>) -> Vec<(isize, isize)> {
                     None
                 })
             })
-            .filter_map(identity)
+            .flatten()
     ]
     .collect()
 }
+
 fn part1(input: &str) -> usize {
     tail(head(input)).into_iter().unique().count()
 }
