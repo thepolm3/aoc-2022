@@ -4,6 +4,7 @@ use itertools::Itertools;
 use std::fs;
 
 fn head(input: &str) -> Vec<(isize, isize)> {
+    let (mut x, mut y) = (0_isize, 0_isize);
     chain![
         [(0, 0)],
         input
@@ -13,23 +14,18 @@ fn head(input: &str) -> Vec<(isize, isize)> {
                     .map(|(a, b)| (a, b.parse::<usize>().expect("parse error digit")))
                     .expect("bad line")
             })
-            .scan((0_isize, 0_isize), |position, (dir, length)| {
-                Some(
-                    (0..length)
-                        .map(|_| {
-                            match dir {
-                                "L" => position.0 -= 1,
-                                "R" => position.0 += 1,
-                                "D" => position.1 -= 1,
-                                "U" => position.1 += 1,
-                                _ => panic!("parse error LRUD"),
-                            };
-                            *position
-                        })
-                        .collect_vec(),
-                )
+            .flat_map(|(dir, length)| {
+                (0..length).map(move |_| {
+                    match dir {
+                        "L" => x -= 1,
+                        "R" => x += 1,
+                        "D" => y -= 1,
+                        "U" => y += 1,
+                        _ => panic!("parse error LRUD"),
+                    };
+                    (x, y)
+                })
             })
-            .flatten()
     ]
     .collect()
 }
@@ -64,9 +60,12 @@ fn part2(input: &str, length: usize) -> usize {
 }
 fn main() -> Result<()> {
     let input = fs::read_to_string("inputs/day9.txt")?;
-
+    let time = std::time::Instant::now();
     println!("9.1 {}", part1(&input));
+    println!("{:?}", time.elapsed());
+    let time = std::time::Instant::now();
     println!("9.2 {}", part2(&input, 10));
+    println!("{:?}", time.elapsed());
 
     Ok(())
 }
