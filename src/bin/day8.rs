@@ -102,6 +102,7 @@ fn main() {
     let time = std::time::Instant::now();
     println!("8.1: {}", part1::<99>(&lines));
     println!("{:?}", time.elapsed());
+    let time = std::time::Instant::now();
     println!("8.2: {}", part2(&lines).unwrap());
     println!("{:?}", time.elapsed());
 }
