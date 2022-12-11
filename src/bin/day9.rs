@@ -1,7 +1,6 @@
 use anyhow::Result;
 use itertools::chain;
 use itertools::Itertools;
-use std::cell::Cell;
 use std::fs;
 
 fn head(input: &str) -> Vec<(isize, isize)> {
