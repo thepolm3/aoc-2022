@@ -5,7 +5,7 @@ fn main() -> Result<()> {
     let input = std::fs::read_to_string("inputs/day10.txt")?;
 
     let instructions = input.lines().map(|line| {
-        line.split_once(" ")
+        line.split_once(' ')
             .and_then(|(_, num)| num.parse::<isize>().ok())
     });
     let registers = instructions

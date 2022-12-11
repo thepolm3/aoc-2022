@@ -37,11 +37,11 @@ struct MonkeyEquation {
     input: Variable,
 }
 impl MonkeyEquation {
-    fn apply(&self, input: usize) -> usize {
-        let snd_term = self.input.get(input);
+    fn apply(&self, old: usize) -> usize {
+        let snd_term = self.input.get(old);
         match self.op {
-            Op::Mul => input * snd_term,
-            Op::Add => input + snd_term,
+            Op::Mul => old * snd_term,
+            Op::Add => old + snd_term,
         }
     }
 }
