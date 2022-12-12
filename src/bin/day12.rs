@@ -84,8 +84,8 @@ fn main() -> Result<()> {
             }
         }
     }
-    println!("12.1 {:?}", grid[start].distance.context("no solution p1")?);
-    println!("12.2 {:?}", part2.context("no solution p2")?);
+    println!("12.1 {:?}", grid[start].distance);
+    println!("12.2 {:?}", part2);
     println!("{:?}", now.elapsed());
 
     Ok(())
