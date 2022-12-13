@@ -28,37 +28,15 @@ impl Display for Packet {
 impl PartialOrd for Packet {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(match (self, other) {
-            (Packet::Value(x), Packet::Value(y)) => return Some(x.cmp(y)),
-            (left @ Packet::Value(_), Packet::Packet(right)) => right
-                .get(0)
-                .and_then(|y| {
-                    left.partial_cmp(y).map(|ord| match ord {
-                        std::cmp::Ordering::Equal => {
-                            if right.len() == 1 {
-                                std::cmp::Ordering::Equal
-                            } else {
-                                std::cmp::Ordering::Less
-                            }
-                        }
-                        other => other,
-                    })
-                })
-                .unwrap_or(std::cmp::Ordering::Greater),
-            (Packet::Packet(left), right @ Packet::Value(_)) => left
-                .get(0)
-                .and_then(|x| {
-                    x.partial_cmp(right).map(|ord| match ord {
-                        std::cmp::Ordering::Equal => {
-                            if left.len() == 1 {
-                                std::cmp::Ordering::Equal
-                            } else {
-                                std::cmp::Ordering::Greater
-                            }
-                        }
-                        other => other,
-                    })
-                })
-                .unwrap_or(std::cmp::Ordering::Less),
+            (Packet::Value(x), Packet::Value(y)) => x.cmp(y),
+            (left @ Packet::Value(_), right @ Packet::Packet(_)) => {
+                Packet::Packet(vec![left.clone()])
+                    .partial_cmp(right)
+                    .unwrap()
+            }
+            (left @ Packet::Packet(_), right @ Packet::Value(_)) => left
+                .partial_cmp(&Packet::Packet(vec![right.clone()]))
+                .unwrap(),
             (Packet::Packet(left), Packet::Packet(right)) => left
                 .iter()
                 .zip_longest(right.iter())
