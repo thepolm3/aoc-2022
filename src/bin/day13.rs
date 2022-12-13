@@ -5,10 +5,10 @@ use itertools::Itertools;
 use nom::{
     branch::alt,
     bytes::complete::tag,
-    character::complete::{line_ending, multispace1},
+    character::complete::multispace1,
     combinator::{map, map_res},
-    multi::{count, separated_list0, separated_list1},
-    sequence::{delimited, separated_pair},
+    multi::{separated_list0, separated_list1},
+    sequence::delimited,
     IResult,
 };
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -58,38 +58,35 @@ fn packet(input: &str) -> IResult<&str, Packet> {
     ))(input)
 }
 
-fn parse_part1(input: &str) -> IResult<&str, Vec<(Packet, Packet)>> {
-    separated_list1(
-        count(line_ending, 2),
-        separated_pair(packet, line_ending, packet),
-    )(input)
+fn parse(input: &str) -> IResult<&str, Vec<Packet>> {
+    separated_list1(multispace1, packet)(input)
 }
 
-fn parse_part2(input: &str) -> IResult<&str, Vec<Packet>> {
-    separated_list1(multispace1, packet)(input)
+fn part1(packets: &Vec<Packet>) -> usize {
+    packets
+        .iter()
+        .tuples()
+        .enumerate()
+        .filter_map(|(i, (l, r))| if l <= r { Some(i + 1) } else { None })
+        .sum()
 }
 
 fn main() -> Result<()> {
     let input = std::fs::read_to_string("inputs/day13.txt")?;
-    let (remaining, packets) = parse_part1(&input).unwrap();
-    assert_eq!(remaining.trim(), "");
-    let part1: usize = packets
-        .iter()
-        .enumerate()
-        .filter_map(|(i, (l, r))| if l <= r { Some(i + 1) } else { None })
-        .sum();
-    println!("13.1 {part1}");
 
-    let (remaining, mut packets) = parse_part2(&input).unwrap();
+    let (remaining, mut packets) = parse(&input).unwrap();
     assert_eq!(remaining.trim(), "");
+
+    println!("13.1 {}", part1(&packets));
+
     let two_packet = packet("[[2]]").unwrap().1;
     let six_packet = packet("[[6]]").unwrap().1;
     packets.push(two_packet.clone());
     packets.push(six_packet.clone());
     packets.sort();
 
-    let part2 = (packets.iter().position(|x| *x == two_packet).unwrap() + 1)
-        * (packets.iter().position(|x| *x == six_packet).unwrap() + 1);
+    let part2 = (packets.binary_search(&two_packet).unwrap() + 1)
+        * (packets.binary_search(&six_packet).unwrap() + 1);
 
     println!("13.2: {part2}");
     Ok(())
@@ -102,20 +99,20 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_part1_input() {
+    fn test_part1() {
         let input = std::fs::read_to_string("test_inputs/day13.txt").unwrap();
-        let (remaining, packets) = parse_part1(&input).unwrap();
+        let (remaining, packets) = parse(&input).unwrap();
         assert_eq!(remaining.trim(), "");
         assert_equal(
             [true, true, false, true, false, true, false, false],
-            packets.into_iter().map(|(l, r)| l < r),
+            packets.into_iter().tuples().map(|(l, r)| l < r),
         );
     }
 
     #[test]
-    fn test_part2_input() {
+    fn test_part2() {
         let input = std::fs::read_to_string("test_inputs/day13.txt").unwrap();
-        let (remaining, mut packets) = parse_part2(&input).unwrap();
+        let (remaining, mut packets) = parse(&input).unwrap();
         assert_eq!(remaining.trim(), "");
         packets.push(packet("[[2]]").unwrap().1);
         packets.push(packet("[[6]]").unwrap().1);
@@ -123,7 +120,7 @@ mod tests {
 
         assert_eq!(
             packets,
-            parse_part2(
+            parse(
                 "[]
             [[]]
             [[[]]]
