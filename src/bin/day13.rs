@@ -24,36 +24,23 @@ impl Display for Packet {
         }
     }
 }
-
 impl PartialOrd for Packet {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(match (self, other) {
-            (Packet::Value(x), Packet::Value(y)) => x.cmp(y),
-            (left @ Packet::Value(_), right @ Packet::Packet(_)) => {
-                Packet::Packet(vec![left.clone()])
-                    .partial_cmp(right)
-                    .unwrap()
-            }
-            (left @ Packet::Packet(_), right @ Packet::Value(_)) => left
-                .partial_cmp(&Packet::Packet(vec![right.clone()]))
-                .unwrap(),
-            (Packet::Packet(left), Packet::Packet(right)) => left
-                .iter()
-                .zip_longest(right.iter())
-                .map(|packets| match packets {
-                    itertools::EitherOrBoth::Left(_) => std::cmp::Ordering::Greater,
-                    itertools::EitherOrBoth::Right(_) => std::cmp::Ordering::Less,
-                    itertools::EitherOrBoth::Both(x, y) => x.partial_cmp(y).unwrap(),
-                })
-                .find(|x| *x != std::cmp::Ordering::Equal)
-                .unwrap_or(std::cmp::Ordering::Equal),
-        })
+        Some(self.cmp(other))
     }
 }
-
 impl Ord for Packet {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.partial_cmp(other).unwrap()
+        match (self, other) {
+            (Packet::Value(l), Packet::Value(r)) => l.cmp(r),
+            (Packet::Packet(l), Packet::Packet(r)) => l.cmp(r),
+            (Packet::Value(l), Packet::Packet(r)) => {
+                [Packet::Value(*l)].as_slice().cmp(r.as_slice())
+            }
+            (Packet::Packet(l), Packet::Value(r)) => {
+                l.as_slice().cmp([Packet::Value(*r)].as_slice())
+            }
+        }
     }
 }
 
