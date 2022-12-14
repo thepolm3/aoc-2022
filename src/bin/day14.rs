@@ -185,16 +185,14 @@ fn main() -> Result<()> {
         .context("No items")?;
 
     let mut grid = Grid::new(xrange, (0, yrange.1 + 1));
-
     for (from, to) in paths.iter().flat_map(|path| path.iter().tuple_windows()) {
         grid.add_line_of(*from, *to, GridSquare::Rock);
     }
-    println!("{grid}");
-    grid.cast_shadows();
-    println!("{grid}");
-    let part2 = grid.ysize.pow(2) - grid.inner.iter().filter(|x| !x.is_empty()).count();
 
     println!("14.1 {}", sand_to_overflow(&mut grid).unwrap());
+    grid.cast_shadows();
+    let part2 = grid.ysize.pow(2) - grid.inner.iter().filter(|x| !x.is_empty()).count();
+
     println!("14.2 {}", part2);
 
     //manual part2
@@ -216,6 +214,5 @@ fn main() -> Result<()> {
         GridSquare::Rock,
     );
     println!("14.2 {}", sand_to_overflow(&mut grid).unwrap_err());
-
     Ok(())
 }
