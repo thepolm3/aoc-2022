@@ -31,7 +31,7 @@ impl Display for GridSquare {
                 Self::Empty => " ",
                 Self::Rock => "#",
                 Self::Sand => "o",
-                Self::Shadow => "@",
+                Self::Shadow => "v",
             }
         )
     }
@@ -103,15 +103,23 @@ impl Grid {
             for x in xrange.0..=xrange.1 {
                 self[(x, from.1)] = gridsquare;
             }
-            if xrange.1 - xrange.0 >= 2 && from.1 < self.ystart + self.ysize - 1 {
-                self.add_line_of(
-                    (xrange.0 + 1, from.1 + 1),
-                    (xrange.1 - 1, from.1 + 1),
-                    GridSquare::Shadow,
-                );
-            }
         } else {
             panic!("{:?} {:?}, line is not straight!", from, to);
+        }
+    }
+
+    fn cast_shadows(&mut self) {
+        for i in 1..self.ysize {
+            let (start, rest) = self.inner.split_at_mut(i * self.xsize);
+            let current_row = &start[(i - 1) * self.xsize..i * self.xsize];
+            let next_row = &mut rest[1..self.xsize - 1];
+            for (j, items) in current_row.windows(3).enumerate() {
+                if items.iter().all(|x| !x.is_empty()) {
+                    if next_row[j].is_empty() {
+                        next_row[j] = GridSquare::Shadow;
+                    }
+                }
+            }
         }
     }
 }
@@ -132,7 +140,7 @@ fn parse(input: &str) -> IResult<&str, Vec<Vec<(usize, usize)>>> {
     separated_list1(line_ending, path)(input)
 }
 
-fn sand_to_overflow(mut grid: Grid) -> Result<usize, usize> {
+fn sand_to_overflow(grid: &mut Grid) -> Result<usize, usize> {
     let mut path = Vec::new();
     for i in 0.. {
         let (mut x, mut y) = path.pop().unwrap_or((500, 0));
@@ -155,12 +163,10 @@ fn sand_to_overflow(mut grid: Grid) -> Result<usize, usize> {
             break 'inner;
         }
     }
-    unreachable!();
+    unreachable!(); //all grids either overflow or reach their starting point
 }
 
 fn main() -> Result<()> {
-    let timer = std::time::Instant::now();
-
     let input = std::fs::read_to_string("inputs/day14.txt")?;
     let (remaining, paths) = parse(&input).unwrap();
     assert_eq!(remaining.trim(), "");
@@ -183,15 +189,33 @@ fn main() -> Result<()> {
     for (from, to) in paths.iter().flat_map(|path| path.iter().tuple_windows()) {
         grid.add_line_of(*from, *to, GridSquare::Rock);
     }
-
-    println!("Parsing: {:?}", timer.elapsed());
-    let timer = std::time::Instant::now();
+    println!("{grid}");
+    grid.cast_shadows();
+    println!("{grid}");
     let part2 = grid.ysize.pow(2) - grid.inner.iter().filter(|x| !x.is_empty()).count();
-    println!("Part2: {:?}", timer.elapsed());
 
-    println!("14.1 {}", sand_to_overflow(grid).unwrap());
-    println!("Part1: {:?}", timer.elapsed());
-    println!("14.2 {part2}");
+    println!("14.1 {}", sand_to_overflow(&mut grid).unwrap());
+    println!("14.2 {}", part2);
+
+    //manual part2
+
+    let mut grid = Grid::new(
+        (
+            xrange.0.min(500 - yrange.1 - 5),
+            xrange.1.max(500 + yrange.1 + 5),
+        ),
+        (0, yrange.1 + 2),
+    );
+
+    for (from, to) in paths.iter().flat_map(|path| path.iter().tuple_windows()) {
+        grid.add_line_of(*from, *to, GridSquare::Rock);
+    }
+    grid.add_line_of(
+        (grid.xstart, yrange.1 + 2),
+        (grid.xstart + grid.xsize - 1, yrange.1 + 2),
+        GridSquare::Rock,
+    );
+    println!("14.2 {}", sand_to_overflow(&mut grid).unwrap_err());
 
     Ok(())
 }
