@@ -15,6 +15,7 @@ enum GridSquare {
     Empty,
     Rock,
     Sand,
+    Shadow,
 }
 impl GridSquare {
     fn is_empty(&self) -> bool {
@@ -30,6 +31,7 @@ impl Display for GridSquare {
                 Self::Empty => " ",
                 Self::Rock => "#",
                 Self::Sand => "o",
+                Self::Shadow => "@",
             }
         )
     }
@@ -64,7 +66,7 @@ impl Display for Grid {
                 .chunks_exact(self.xsize)
                 .map(|chunk| chunk.iter().map(|x| format!("{x}")).join(""))
                 .enumerate()
-                .map(|(ln, x)| format!("{} {}", ln, x))
+                .map(|(ln, x)| format!("{:03} {}", ln, x))
                 .join("\n")
         )
     }
@@ -91,11 +93,25 @@ impl Grid {
             .then(|| &self[coords])
     }
 
-    fn add_rock(&mut self, from: (usize, usize), to: (usize, usize)) {
-        let start = (from.0.min(to.0), from.1.min(to.1));
-        let end = (from.0.max(to.0), from.1.max(to.1));
-        for (x, y) in (start.0..=end.0).cartesian_product(start.1..=end.1) {
-            self[(x, y)] = GridSquare::Rock;
+    fn add_line_of(&mut self, from: (usize, usize), to: (usize, usize), gridsquare: GridSquare) {
+        if from.0 == to.0 {
+            for y in from.1.min(to.1)..=from.1.max(to.1) {
+                self[(from.0, y)] = gridsquare;
+            }
+        } else if from.1 == to.1 {
+            let xrange = (from.0.min(to.0), from.0.max(to.0));
+            for x in xrange.0..=xrange.1 {
+                self[(x, from.1)] = gridsquare;
+            }
+            if xrange.1 - xrange.0 >= 2 && from.1 < self.ystart + self.ysize - 1 {
+                self.add_line_of(
+                    (xrange.0 + 1, from.1 + 1),
+                    (xrange.1 - 1, from.1 + 1),
+                    GridSquare::Shadow,
+                );
+            }
+        } else {
+            panic!("{:?} {:?}, line is not straight!", from, to);
         }
     }
 }
@@ -143,6 +159,8 @@ fn sand_to_overflow(mut grid: Grid) -> Result<usize, usize> {
 }
 
 fn main() -> Result<()> {
+    let timer = std::time::Instant::now();
+
     let input = std::fs::read_to_string("inputs/day14.txt")?;
     let (remaining, paths) = parse(&input).unwrap();
     assert_eq!(remaining.trim(), "");
@@ -160,31 +178,20 @@ fn main() -> Result<()> {
         .into_option()
         .context("No items")?;
 
-    let mut grid = Grid::new(xrange, (0, yrange.1));
+    let mut grid = Grid::new(xrange, (0, yrange.1 + 1));
 
     for (from, to) in paths.iter().flat_map(|path| path.iter().tuple_windows()) {
-        grid.add_rock(*from, *to);
+        grid.add_line_of(*from, *to, GridSquare::Rock);
     }
+
+    println!("Parsing: {:?}", timer.elapsed());
+    let timer = std::time::Instant::now();
+    let part2 = grid.ysize.pow(2) - grid.inner.iter().filter(|x| !x.is_empty()).count();
+    println!("Part2: {:?}", timer.elapsed());
 
     println!("14.1 {}", sand_to_overflow(grid).unwrap());
-
-    let mut grid = Grid::new(
-        (
-            xrange.0.min(500 - (yrange.1 + 3)),
-            xrange.1.max(500 + (yrange.1 + 3)),
-        ),
-        (0, yrange.1 + 2),
-    );
-
-    for (from, to) in paths.iter().flat_map(|path| path.iter().tuple_windows()) {
-        grid.add_rock(*from, *to);
-    }
-    grid.add_rock(
-        (grid.xstart, yrange.1 + 2),
-        (grid.xstart + grid.xsize - 1, yrange.1 + 2),
-    );
-
-    println!("14.2 {}", sand_to_overflow(grid).unwrap_err());
+    println!("Part1: {:?}", timer.elapsed());
+    println!("14.2 {part2}");
 
     Ok(())
 }
