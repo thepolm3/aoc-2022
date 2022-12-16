@@ -35,6 +35,7 @@ fn parse(input: &str) -> IResult<&str, (usize, Vec<(usize, usize, Vec<usize>)>)>
     let (remaining, valves) = separated_list1(line_ending, parse_valve)(input)?;
 
     let lookup: Vec<&str> = valves.iter().map(|(i, _, _)| *i).collect();
+
     let start_index = lookup.iter().position(|&x| x == "AA").unwrap();
     let indexed_valves = valves
         .into_iter()
@@ -76,11 +77,10 @@ fn get_flows_and_dist(valves: Vec<(usize, usize, Vec<usize>)>) -> (Vec<usize>, A
     }
     floyd_warshall(&mut adjacancy);
 
-    let dist = adjacancy.map(|x| x.unwrap());
-
-    let flows = valves.into_iter().map(|(_, flow, _)| flow).collect();
-
-    (flows, dist)
+    (
+        valves.into_iter().map(|(_, flow, _)| flow).collect(),
+        adjacancy.map(|x| x.unwrap()),
+    )
 }
 
 //pass flows as a reference to prevent having to repeatedly clone it
@@ -96,23 +96,29 @@ fn max_pressure<const N: usize>(
         if flow == 0 {
             continue;
         }
+        //move the worker with the most time left
         let worker_index = times.iter().position_max().unwrap();
-        let current = positions[worker_index];
+
+        let current_position = positions[worker_index];
         if let Some(remaining_time) =
-            times[worker_index].checked_sub(adjacency[[current, flow_index]] + 1)
+            times[worker_index].checked_sub(adjacency[[current_position, flow_index]] + 1)
         {
             //short circuit if naiive bound fails
-            if max > flows.iter().sum::<usize>() * remaining_time {
+            if max >= flows.iter().sum::<usize>() * remaining_time {
                 continue;
             }
+            //zero out flow
             flows[flow_index] = 0;
-            let mut new_times = times;
+
+            let (mut new_times, mut new_positions) = (times, positions);
             new_times[worker_index] = remaining_time;
-            let mut new_positions = positions;
             new_positions[worker_index] = flow_index;
+
             max = max.max(
                 flow * remaining_time + max_pressure(flows, adjacency, new_positions, new_times),
             );
+
+            //restore flow for next iteration
             flows[flow_index] = flow;
         }
     }
@@ -120,7 +126,7 @@ fn max_pressure<const N: usize>(
 }
 
 fn main() {
-    let input = std::fs::read_to_string("test_inputs/day16.txt")
+    let input = std::fs::read_to_string("inputs/day16.txt")
         .unwrap()
         .trim()
         .to_owned();
