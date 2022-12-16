@@ -94,8 +94,9 @@ fn count_impossible_beacons_in_row(sensor_beacons: &Vec<(Coord, Coord)>, y: isiz
             })
             .count()
 }
-
 fn part2_brute_force(sensor_beacons: &Vec<(Coord, Coord)>, min: isize, max: isize) -> isize {
+    //todo: get disjoit excluded rows by iterating through the sensors
+
     for y in min..=max {
         let intersections = disjoint_intersections_with_row(&sensor_beacons, y);
         if intersections.len() > 1 {
