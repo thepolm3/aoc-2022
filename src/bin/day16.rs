@@ -9,7 +9,6 @@ use nom::{
     sequence::tuple,
     IResult,
 };
-use std::ops::Index;
 
 fn digit1(input: &str) -> IResult<&str, usize> {
     map_res(nom::character::complete::digit1, str::parse)(input)
@@ -70,9 +69,9 @@ fn get_flows_and_dist(valves: Vec<(usize, usize, Vec<usize>)>) -> (Vec<usize>, A
     let mut adjacancy = Array2::<Option<usize>>::default((n, n));
 
     for (v, _, nbrs) in &valves {
-        adjacancy[[*v as usize, *v as usize]] = Some(0);
+        adjacancy[[*v, *v]] = Some(0);
         for nbr in nbrs {
-            adjacancy[[*v as usize, *nbr as usize]] = Some(1);
+            adjacancy[[*v, *nbr]] = Some(1);
         }
     }
     floyd_warshall(&mut adjacancy);
@@ -86,7 +85,7 @@ fn get_flows_and_dist(valves: Vec<(usize, usize, Vec<usize>)>) -> (Vec<usize>, A
 
 //pass flows as a reference to prevent having to repeatedly clone it
 fn max_pressure<const N: usize>(
-    mut flows: &mut Vec<usize>,
+    flows: &mut Vec<usize>,
     adjacency: &Array2<usize>,
     positions: [usize; N],
     times: [usize; N],
@@ -107,13 +106,12 @@ fn max_pressure<const N: usize>(
                 continue;
             }
             flows[flow_index] = 0;
-            let mut new_times = times.clone();
+            let mut new_times = times;
             new_times[worker_index] = remaining_time;
-            let mut new_positions = positions.clone();
+            let mut new_positions = positions;
             new_positions[worker_index] = flow_index;
             max = max.max(
-                flow * remaining_time
-                    + max_pressure(&mut flows, adjacency, new_positions, new_times),
+                flow * remaining_time + max_pressure(flows, adjacency, new_positions, new_times),
             );
             flows[flow_index] = flow;
         }

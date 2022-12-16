@@ -42,7 +42,7 @@ fn parse(input: &str) -> IResult<&str, Vec<(Coord, Coord)>> {
     separated_list1(line_ending, sensor_beacon)(input)
 }
 
-fn sorted_to_disjoint_intervals(intervals: &Vec<(isize, isize)>) -> Vec<(isize, isize)> {
+fn sorted_to_disjoint_intervals(intervals: &[(isize, isize)]) -> Vec<(isize, isize)> {
     let mut result = Vec::new();
     let mut i = 0;
     while let Some((start, end)) = intervals.get(i) {
@@ -66,7 +66,7 @@ fn disjoint_intersections_with_row(
     let mut intersections = Vec::new();
 
     for (sensor, beacon) in sensor_beacons {
-        let range = d(&sensor, &beacon);
+        let range = d(sensor, beacon);
         if sensor.1 + range as isize > y && sensor.1 - (range as isize) < y {
             let reach = (range - sensor.1.abs_diff(y)) as isize;
             intersections.push(((sensor.0 - reach), (sensor.0 + reach)));
@@ -76,7 +76,7 @@ fn disjoint_intersections_with_row(
     sorted_to_disjoint_intervals(&intersections)
 }
 fn count_impossible_beacons_in_row(sensor_beacons: &Vec<(Coord, Coord)>, y: isize) -> usize {
-    let intersections = disjoint_intersections_with_row(&sensor_beacons, y);
+    let intersections = disjoint_intersections_with_row(sensor_beacons, y);
 
     intersections
         .iter()
@@ -98,7 +98,7 @@ fn part2_brute_force(sensor_beacons: &Vec<(Coord, Coord)>, min: isize, max: isiz
     //todo: get disjoit excluded rows by iterating through the sensors
 
     for y in min..=max {
-        let intersections = disjoint_intersections_with_row(&sensor_beacons, y);
+        let intersections = disjoint_intersections_with_row(sensor_beacons, y);
         if intersections.len() > 1 {
             return (intersections[0].1 + 1) * max + y;
         }

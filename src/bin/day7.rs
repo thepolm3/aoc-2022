@@ -129,7 +129,7 @@ fn build_directory_tree(input: Vec<ConsoleLine>) -> Result<Directory> {
                         .context("stack empty")?
                         .subdirectories
                         .entry(last.name.clone())
-                        .or_insert(Directory::new(last.name.clone()));
+                        .or_insert_with(|| Directory::new(last.name.clone()));
                     parent_dir.merge(last);
                 } else {
                     let entry = stack
@@ -137,7 +137,7 @@ fn build_directory_tree(input: Vec<ConsoleLine>) -> Result<Directory> {
                         .unwrap_or(&mut Directory::new(path.clone()))
                         .subdirectories
                         .remove(&path)
-                        .unwrap_or(Directory::new(path));
+                        .unwrap_or_else(|| Directory::new(path));
                     stack.push(entry);
                 }
             }

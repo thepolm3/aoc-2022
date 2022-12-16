@@ -62,7 +62,7 @@ fn parse(input: &str) -> IResult<&str, Vec<Packet>> {
     separated_list1(multispace1, packet)(input)
 }
 
-fn part1(packets: &Vec<Packet>) -> usize {
+fn part1(packets: &[Packet]) -> usize {
     packets
         .iter()
         .tuples()
