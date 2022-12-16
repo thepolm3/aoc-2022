@@ -120,7 +120,6 @@ fn max_pressure<const N: usize>(
 }
 
 fn main() {
-    let timer = std::time::Instant::now();
     let input = std::fs::read_to_string("test_inputs/day16.txt")
         .unwrap()
         .trim()
@@ -132,13 +131,15 @@ fn main() {
 
     let (mut flows, dist) = get_flows_and_dist(valves);
 
-    println!("{}", max_pressure(&mut flows, &dist, [start_index], [30]));
+    println!(
+        "16.1: {}",
+        max_pressure(&mut flows, &dist, [start_index], [30])
+    );
 
     println!(
-        "{}",
+        "16.2: {}",
         max_pressure(&mut flows, &dist, [start_index; 2], [26; 2])
     );
-    println!("{:?}", timer.elapsed());
 }
 
 #[cfg(test)]
