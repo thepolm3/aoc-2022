@@ -43,7 +43,7 @@ impl Motion {
         }
     }
 }
-#[derive(Debug, PartialEq, Eq, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone, Hash)]
 enum State {
     Rock,
     Air,
@@ -124,7 +124,7 @@ struct PlayGrid {
 }
 impl Display for PlayGrid {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for row in self.inner[..].chunks_exact(self.width).rev().take(50) {
+        for row in self.inner[..].chunks_exact(self.width).rev() {
             write!(f, "|{}|\n", row.iter().map(|s| format!("{}", s)).join(""))?;
         }
         write!(f, "+{}+", "-".repeat(self.width))
@@ -184,6 +184,11 @@ impl PlayGrid {
         }
         false
     }
+
+    fn head(&self) -> &[State] {
+        let len = self.inner.len();
+        &self.inner[len.saturating_sub(self.width * 20)..self.inner.len()]
+    }
 }
 
 fn one_move(input: &str) -> IResult<&str, Motion> {
@@ -213,54 +218,24 @@ fn parse_shapes(input: &str) -> IResult<&str, Vec<TetrisPiece>> {
     separated_list1(count(line_ending, 2), parse_shape)(input)
 }
 
-fn part1(moves: &Vec<Motion>, shapes: &Vec<TetrisPiece>) -> usize {
-    let mut grid = PlayGrid::new(7);
-    let mut moves = moves.into_iter().cycle();
-    for shape in shapes.into_iter().cycle().take(2022) {
-        let mut position: (usize, usize) = (2, grid.height() + 3);
-        while let Some(mv) = moves.next() {
-            let new_position = (
-                match mv {
-                    Motion::Left => position.0.saturating_sub(1),
-                    Motion::Right => position.0 + 1,
-                },
-                position.1,
-            );
-            if !grid.collides_with_tetris_piece(&shape, new_position) {
-                position = new_position;
-            }
-            if position.1 == 0
-                || grid.collides_with_tetris_piece(&shape, (position.0, position.1 - 1))
-            {
-                grid.set_tetris_piece(position, shape.clone());
-                break;
-            } else {
-                position.1 -= 1;
-            }
-        }
-    }
-    grid.height()
-}
-
 fn detect_cycle(moves: &Vec<Motion>, shapes: &Vec<TetrisPiece>, iterations: usize) -> usize {
     let mut seen = HashMap::new();
     let mut grid = PlayGrid::new(7);
     let mut i = 0;
-    let mut skipped_height = 0;
     let mut mv_idx = 0;
-    let mut cycle_detected = false;
+    let mut cycle_detected = None;
     while let Some(shape) = shapes.get(i % shapes.len()) {
-        if !cycle_detected {
+        if cycle_detected.is_none() {
             let last_seen = seen.insert(
-                (i % shapes.len(), mv_idx, format!("{}", grid)),
+                (i % shapes.len(), mv_idx, grid.head().to_owned()),
                 (i, grid.height()),
             );
             if let Some((j, h)) = last_seen {
-                skipped_height =
-                    h + (grid.height() - h) * ((iterations - j) / (i - j)) - grid.height();
+                // save the height we're skipping
+                cycle_detected =
+                    Some(h + (grid.height() - h) * ((iterations - j) / (i - j)) - grid.height());
+                //skip i
                 i = j + (i - j) * ((iterations - j) / (i - j));
-                cycle_detected = true;
-                println!("{i}");
             };
         }
         let mut position: (usize, usize) = (2, grid.height() + 3);
@@ -290,7 +265,7 @@ fn detect_cycle(moves: &Vec<Motion>, shapes: &Vec<TetrisPiece>, iterations: usiz
         }
         i += 1;
     }
-    grid.height() + skipped_height
+    grid.height() + cycle_detected.unwrap_or(0)
 }
 
 fn main() {
@@ -301,7 +276,6 @@ fn main() {
     let (remaining, moves) = parse_moves(&input).unwrap();
     assert_eq!(remaining.trim(), "");
 
-    println!("{}", part1(&moves, &shapes));
     println!("17.1: {}", detect_cycle(&moves, &shapes, 2022));
     println!("17.2: {}", detect_cycle(&moves, &shapes, 1000000000000));
 }
