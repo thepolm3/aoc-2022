@@ -13,7 +13,7 @@ fn main() -> Result<()> {
             match instruction {
                 Some(addx) => {
                     *pc += 2;
-                    *x += addx
+                    *x += addx;
                 }
                 None => *pc += 1,
             };

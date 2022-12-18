@@ -114,10 +114,8 @@ impl Grid {
             let current_row = &start[(i - 1) * self.xsize..i * self.xsize];
             let next_row = &mut rest[1..self.xsize - 1];
             for (j, items) in current_row.windows(3).enumerate() {
-                if items.iter().all(|x| !x.is_empty()) {
-                    if next_row[j].is_empty() {
-                        next_row[j] = GridSquare::Shadow;
-                    }
+                if items.iter().all(|x| !x.is_empty()) && next_row[j].is_empty() {
+                    next_row[j] = GridSquare::Shadow;
                 }
             }
         }

@@ -1,17 +1,12 @@
-use std::{
-    collections::{HashMap, HashSet},
-    fmt::Display,
-    iter::{repeat, Cycle},
-};
+use std::{collections::HashMap, fmt::Display, iter::repeat};
 
 use itertools::Itertools;
 use nom::{
     branch::alt,
     bytes::complete::tag,
     character::complete::line_ending,
-    combinator::{map, opt},
-    multi::{count, many1, many_till, separated_list1},
-    sequence::tuple,
+    combinator::map,
+    multi::{count, many1, separated_list1},
     IResult,
 };
 
@@ -69,8 +64,8 @@ impl State {
         }
     }
 
-    fn is_solid(&self) -> bool {
-        self == &Self::Rock
+    fn is_solid(self) -> bool {
+        self == Self::Rock
     }
 }
 
@@ -83,7 +78,7 @@ struct TetrisPiece {
 impl Display for TetrisPiece {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for row in self.inner[..].chunks_exact(self.width) {
-            write!(f, "{}\n", row.iter().map(|s| format!("{}", s)).join(""))?;
+            writeln!(f, "{}", row.iter().map(|s| format!("{s}")).join(""))?;
         }
         Ok(())
     }
@@ -125,7 +120,7 @@ struct PlayGrid {
 impl Display for PlayGrid {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for row in self.inner[..].chunks_exact(self.width).rev() {
-            write!(f, "|{}|\n", row.iter().map(|s| format!("{}", s)).join(""))?;
+            writeln!(f, "|{}|", row.iter().map(|s| format!("{s}")).join(""))?;
         }
         write!(f, "+{}+", "-".repeat(self.width))
     }
@@ -178,7 +173,7 @@ impl PlayGrid {
             if state == &State::Air {
                 continue;
             }
-            if self.get((x, y)).map(State::is_solid).unwrap_or(true) {
+            if self.get((x, y)).copied().map_or(true, State::is_solid) {
                 return true;
             }
         }
@@ -209,7 +204,10 @@ fn parse_shape(input: &str) -> IResult<&str, TetrisPiece> {
         remaining,
         TetrisPiece::new(
             rows[0].len(),
-            rows.into_iter().rev().flat_map(|x| x.into_iter()).collect(),
+            rows.into_iter()
+                .rev()
+                .flat_map(std::iter::IntoIterator::into_iter)
+                .collect(),
         ),
     ))
 }
@@ -248,17 +246,16 @@ fn detect_cycle(moves: &Vec<Motion>, shapes: &Vec<TetrisPiece>, iterations: usiz
                 },
                 position.1,
             );
-            if !grid.collides_with_tetris_piece(&shape, new_position) {
+            if !grid.collides_with_tetris_piece(shape, new_position) {
                 position = new_position;
             }
             if position.1 == 0
-                || grid.collides_with_tetris_piece(&shape, (position.0, position.1 - 1))
+                || grid.collides_with_tetris_piece(shape, (position.0, position.1 - 1))
             {
                 grid.set_tetris_piece(position, shape.clone());
                 break;
-            } else {
-                position.1 -= 1;
             }
+            position.1 -= 1;
         }
         if i == iterations - 1 {
             break;
@@ -277,5 +274,5 @@ fn main() {
     assert_eq!(remaining.trim(), "");
 
     println!("17.1: {}", detect_cycle(&moves, &shapes, 2022));
-    println!("17.2: {}", detect_cycle(&moves, &shapes, 1000000000000));
+    println!("17.2: {}", detect_cycle(&moves, &shapes, 1_000_000_000_000));
 }

@@ -13,48 +13,48 @@ fn nbrs([x, y, z]: [i32; 3]) -> [[i32; 3]; 6] {
         [x, y, z.wrapping_sub(1)],
     ]
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
-enum Facing {
-    X = 0,
-    Y = 1,
-    Z = 2,
-}
-impl Facing {
-    fn next(&self) -> Self {
-        Self::from_usize(((*self as usize) + 1) % 3)
-    }
+// #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
+// enum Facing {
+//     X = 0,
+//     Y = 1,
+//     Z = 2,
+// }
+// impl Facing {
+//     fn next(&self) -> Self {
+//         Self::from_usize(((*self as usize) + 1) % 3)
+//     }
 
-    fn prev(&self) -> Self {
-        Self::from_usize(((*self as usize) + 2) % 3)
-    }
+//     fn prev(&self) -> Self {
+//         Self::from_usize(((*self as usize) + 2) % 3)
+//     }
 
-    fn from_usize(from: usize) -> Self {
-        match from {
-            0 => Self::X,
-            1 => Self::Y,
-            2 => Self::Z,
-            _ => panic!("usize out of range"),
-        }
-    }
-    fn step_forward(&self, mut position: [i32; 3], n: i32) -> [i32; 3] {
-        position[*self as usize] += n;
-        position
-    }
-    fn step_back(&self, mut position: [i32; 3], n: i32) -> [i32; 3] {
-        self.step_forward(position, -n)
-    }
-}
+//     fn from_usize(from: usize) -> Self {
+//         match from {
+//             0 => Self::X,
+//             1 => Self::Y,
+//             2 => Self::Z,
+//             _ => panic!("usize out of range"),
+//         }
+//     }
+//     fn step_forward(&self, mut position: [i32; 3], n: i32) -> [i32; 3] {
+//         position[*self as usize] += n;
+//         position
+//     }
+//     fn step_back(&self, mut position: [i32; 3], n: i32) -> [i32; 3] {
+//         self.step_forward(position, -n)
+//     }
+// }
 
-fn faces([x, y, z]: [i32; 3]) -> [([i32; 3], Facing); 6] {
-    [
-        ([x + 1, y, z], Facing::X),
-        ([x, y + 1, z], Facing::Y),
-        ([x, y, z + 1], Facing::Z),
-        ([x, y, z], Facing::X),
-        ([x, y, z], Facing::Y),
-        ([x, y, z], Facing::Z),
-    ]
-}
+// fn faces([x, y, z]: [i32; 3]) -> [([i32; 3], Facing); 6] {
+//     [
+//         ([x + 1, y, z], Facing::X),
+//         ([x, y + 1, z], Facing::Y),
+//         ([x, y, z + 1], Facing::Z),
+//         ([x, y, z], Facing::X),
+//         ([x, y, z], Facing::Y),
+//         ([x, y, z], Facing::Z),
+//     ]
+// }
 // //returns face neigbors in pairs, if the first face is present you can ignore the 2nd
 // fn face_nbrs(([x, y, z], facing): ([usize; 3], Facing)) -> [[([usize; 3], Facing); 3]; 4] {
 //     [
@@ -173,7 +173,7 @@ fn part2(cubes: &[[i32; 3]]) -> Option<i32> {
             }
         }
     }
-    let [sidex, sidey, sidez] = [
+    let [side_x, side_y, side_z] = [
         bounds[0].1 - bounds[0].0 + 3,
         bounds[1].1 - bounds[1].0 + 3,
         bounds[2].1 - bounds[2].0 + 3,
@@ -181,14 +181,14 @@ fn part2(cubes: &[[i32; 3]]) -> Option<i32> {
 
     Some(
         part1(&filled_region.into_iter().collect_vec())
-            - 2 * (sidex * sidey + sidey * sidez + sidex * sidez),
+            - 2 * (side_x * side_y + side_y * side_z + side_x * side_z),
     )
 }
 fn main() -> Result<()> {
     let cubes = std::fs::read_to_string("inputs/day18.txt")?
         .lines()
         .map(|l| -> Result<[i32; 3]> {
-            let x = l.split(",").collect_vec();
+            let x = l.split(',').collect_vec();
 
             Ok([x[0].parse()?, x[1].parse()?, x[2].parse()?])
         })
