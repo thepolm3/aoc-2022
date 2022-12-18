@@ -95,8 +95,6 @@ fn count_impossible_beacons_in_row(sensor_beacons: &Vec<(Coord, Coord)>, y: isiz
             .count()
 }
 fn part2_brute_force(sensor_beacons: &Vec<(Coord, Coord)>, min: isize, max: isize) -> isize {
-    //todo: get disjoit excluded rows by iterating through the sensors
-
     for y in min..=max {
         let intersections = disjoint_intersections_with_row(sensor_beacons, y);
         if intersections.len() > 1 {
@@ -104,6 +102,43 @@ fn part2_brute_force(sensor_beacons: &Vec<(Coord, Coord)>, min: isize, max: isiz
         }
     }
     0
+}
+
+fn part2_fast(sensor_beacons: &Vec<(Coord, Coord)>, min: isize, max: isize) -> Option<isize> {
+    let near_misses: Vec<_> = sensor_beacons
+        .iter()
+        .map(|(sensor, beacon)| (sensor, 1 + d(sensor, beacon)))
+        .combinations(2)
+        .into_iter()
+        .filter_map(|sensors| {
+            let (sensor1, range1) = sensors[0];
+            let (sensor2, range2) = sensors[1];
+            (d(sensor1, sensor2) == range1 + range2)
+                .then_some(((sensor1, range1 as isize), (sensor2, range2 as isize)))
+        })
+        .collect();
+
+    let mut candidates = Vec::new();
+    for pair in near_misses.into_iter().combinations(2) {
+        let pair: (Vec<_>, Vec<_>) = pair
+            .into_iter()
+            .partition(|((Coord(x1, y1), _), (Coord(x2, y2), _))| (x1 < x2) ^ (y1 < y2));
+        if let (Some(northeast), Some(southwest)) = (pair.0.get(0), pair.1.get(0)) {
+            let ((Coord(x1, y1), d1), (Coord(x2, y2), d2)) = southwest;
+
+            let x_plus_y = (d1 * (x2 + y2) + d2 * (x1 + y1)) / (d1 + d2);
+
+            let ((Coord(x1, y1), d1), (Coord(x2, y2), d2)) = northeast;
+
+            let x_sub_y = (d1 * (x2 - y2) + d2 * (x1 - y1)) / (d1 + d2);
+
+            candidates.push(((x_plus_y + x_sub_y) / 2, (x_plus_y - x_sub_y) / 2))
+        }
+    }
+    if candidates.is_empty() {
+        return None;
+    }
+    Some(candidates[0].0 * max + candidates[0].1)
 }
 fn main() -> Result<()> {
     let input = std::fs::read_to_string("inputs/day15.txt")?;
@@ -117,8 +152,8 @@ fn main() -> Result<()> {
     );
     let part1 = count_impossible_beacons_in_row(&sensor_beacons, 2_000_000);
     println!("15.1: {part1}");
-    println!("15.2: {}", part2_brute_force(&sensor_beacons, 0, 4_000_000));
 
+    println!("15.2: {:?}", part2_fast(&sensor_beacons, 0, 4_000_000));
     println!();
 
     Ok(())
@@ -136,5 +171,17 @@ mod tests {
         assert_eq!(remaining.trim(), "");
 
         assert_eq!(count_impossible_beacons_in_row(&sensor_beacons, 10), 26);
+    }
+
+    #[test]
+    fn test_part2() {
+        let input = std::fs::read_to_string("test_inputs/day15.txt").unwrap();
+
+        let (remaining, sensor_beacons) = parse(&input).unwrap();
+
+        assert_eq!(
+            Some(part2_brute_force(&sensor_beacons, 0, 4_000_000)),
+            part2_fast(&sensor_beacons, 0, 4_000_000)
+        );
     }
 }

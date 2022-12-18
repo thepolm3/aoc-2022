@@ -153,32 +153,31 @@ fn part1(cubes: &[[i32; 3]]) -> i32 {
 
 fn part2(cubes: &[[i32; 3]]) -> Option<i32> {
     let hs: HashSet<[i32; 3]> = HashSet::from_iter(cubes.to_owned());
+    let bounds = (0..3)
+        .into_iter()
+        .map(|i| cubes.iter().map(|cube| cube[i]).minmax().into_option())
+        .collect::<Option<Vec<_>>>()?;
 
-    let (xmin, xmax) = cubes.iter().map(|cube| cube[0]).minmax().into_option()?;
-    let (ymin, ymax) = cubes.iter().map(|cube| cube[1]).minmax().into_option()?;
-    let (zmin, zmax) = cubes.iter().map(|cube| cube[2]).minmax().into_option()?;
-    println!("{}", (xmax - xmin) * (ymax - ymin) * (zmax - zmin));
-    let current_cube = [xmin - 1, ymin - 1, zmin - 1];
+    let current_cube = [bounds[0].0 - 1, bounds[1].0 - 1, bounds[2].0 - 1];
     let mut filled_region: HashSet<[i32; 3]> = HashSet::from_iter([current_cube]);
     let mut queue = VecDeque::from([current_cube]);
     while let Some(cube) = queue.pop_front() {
-        for nbr @ [x, y, z] in nbrs(cube) {
-            if x < xmin - 1
-                || x > xmax + 1
-                || y < ymin - 1
-                || y > ymax + 1
-                || z < zmin - 1
-                || z > zmax + 1
-            {
-                continue;
-            }
+        for nbr in nbrs(cube).into_iter().filter(|nbr| {
+            nbr.iter()
+                .zip(bounds.iter())
+                .all(|(coord, (min, max))| *coord >= *min - 1 && *coord <= *max + 1)
+        }) {
             if !hs.contains(&nbr) && !filled_region.contains(&nbr) {
                 filled_region.insert(nbr);
                 queue.push_back(nbr);
             }
         }
     }
-    let [sidex, sidey, sidez] = [xmax - xmin + 3, ymax - ymin + 3, zmax - zmin + 3];
+    let [sidex, sidey, sidez] = [
+        bounds[0].1 - bounds[0].0 + 3,
+        bounds[1].1 - bounds[1].0 + 3,
+        bounds[2].1 - bounds[2].0 + 3,
+    ];
 
     Some(
         part1(&filled_region.into_iter().collect_vec())
@@ -195,8 +194,8 @@ fn main() -> Result<()> {
         })
         .collect::<Result<Vec<_>, _>>()?;
 
-    // println!("18.1: {}", part1(&cubes));
-    println!("18.1: {:?}", part2(&cubes));
+    println!("18.1: {}", part1(&cubes));
+    println!("18.2: {:?}", part2(&cubes).unwrap());
 
     Ok(())
 }
