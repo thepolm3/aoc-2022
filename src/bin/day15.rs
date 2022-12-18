@@ -1,5 +1,4 @@
-use anyhow::{Context, Result};
-use itertools::FoldWhile::{Continue, Done};
+use anyhow::Result;
 use itertools::Itertools;
 use nom::{
     bytes::complete::tag,
@@ -9,7 +8,6 @@ use nom::{
     sequence::{preceded, tuple},
     IResult,
 };
-use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone, Hash)]
 struct Coord(isize, isize);
@@ -50,9 +48,8 @@ fn sorted_to_disjoint_intervals(intervals: &[(isize, isize)]) -> Vec<(isize, isi
         while let Some((other_start, other_end)) = intervals.get(i) {
             if other_start > merged_end {
                 break;
-            } else {
-                merged_end = merged_end.max(other_end)
             }
+            merged_end = merged_end.max(other_end);
             i += 1;
         }
         result.push((*start, *merged_end));
@@ -72,7 +69,7 @@ fn disjoint_intersections_with_row(
             intersections.push(((sensor.0 - reach), (sensor.0 + reach)));
         }
     }
-    intersections.sort();
+    intersections.sort_unstable();
     sorted_to_disjoint_intervals(&intersections)
 }
 fn count_impossible_beacons_in_row(sensor_beacons: &Vec<(Coord, Coord)>, y: isize) -> usize {
@@ -107,7 +104,8 @@ fn _part2_brute_force(sensor_beacons: &Vec<(Coord, Coord)>, min: isize, max: isi
 // At a high level, we iterate through the sensors and find the unique point
 // which is exactly one outside the range of four sensors. This will find
 // the hole in our coverage
-fn part2_fast(sensor_beacons: &Vec<(Coord, Coord)>, min: isize, max: isize) -> Option<isize> {
+// some good types would make this neater, but I'm too lazy atm
+fn part2_fast(sensor_beacons: &[(Coord, Coord)], min: isize, max: isize) -> Option<isize> {
     sensor_beacons
         .iter()
         // First we map the sensors and beacons to Sensors and Ranges. We add 1 to the range to get
@@ -188,11 +186,13 @@ fn main() -> Result<()> {
     let (remaining, sensor_beacons) = parse(&input).unwrap();
     assert_eq!(remaining.trim(), "");
 
+    let time = std::time::Instant::now();
     let part1 = count_impossible_beacons_in_row(&sensor_beacons, 2_000_000);
     println!("15.1: {part1}");
-
+    println!("{:?}", time.elapsed());
+    let time = std::time::Instant::now();
     println!("15.2: {:?}", part2_fast(&sensor_beacons, 0, 4_000_000));
-    println!();
+    println!("{:?}", time.elapsed());
 
     Ok(())
 }
@@ -215,7 +215,7 @@ mod tests {
     fn test_part2() {
         let input = std::fs::read_to_string("test_inputs/day15.txt").unwrap();
 
-        let (remaining, sensor_beacons) = parse(&input).unwrap();
+        let (_, sensor_beacons) = parse(&input).unwrap();
 
         assert_eq!(
             Some(_part2_brute_force(&sensor_beacons, 0, 4_000_000)),
