@@ -140,7 +140,7 @@ fn most_geodes_produced(
 }
 
 fn main() {
-    let input = std::fs::read_to_string("test_inputs/day19.txt").unwrap();
+    let input = std::fs::read_to_string("inputs/day19.txt").unwrap();
     let (remaining, blueprints) = blueprints(&input).unwrap();
     assert_eq!(remaining.trim(), "");
 
