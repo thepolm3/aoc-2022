@@ -16,7 +16,14 @@ fn new_idx(old_idx: usize, change: isize, modulus: usize) -> usize {
     }) as usize
 }
 
-fn grove_value(mixed: &[isize]) -> isize {
+fn grove_value(sequence: &[isize], n: usize) -> isize {
+    let mut indexes: Vec<usize> = (0..sequence.len()).collect();
+    for _ in 0..n {
+        indexes = mix(indexes, sequence)
+    }
+
+    let mixed = lookup(indexes, sequence);
+
     let idx = mixed.iter().position(|&x| x == 0).unwrap();
     (1..=3)
         .map(|i| mixed[(1000 * i + idx) % mixed.len()])
@@ -34,17 +41,9 @@ fn main() {
         .map(|l| l.trim().parse::<isize>().unwrap())
         .collect();
 
-    let mut indexes: Vec<usize> = (0..sequence.len()).collect();
-
-    indexes = mix(indexes, &sequence);
-
-    println!("20.1 {}", grove_value(&lookup(indexes, &sequence)));
+    println!("20.1 {}", grove_value(&sequence, 1));
 
     let sequence: Vec<_> = sequence.into_iter().map(|x| x * 811589153).collect();
-    let mut indexes: Vec<usize> = (0..sequence.len()).collect();
-    for _ in 0..10 {
-        indexes = mix(indexes, &sequence)
-    }
 
-    println!("20.2 {}", grove_value(&lookup(indexes, &sequence)));
+    println!("20.2 {}", grove_value(&sequence, 10));
 }
