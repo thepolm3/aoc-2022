@@ -1,4 +1,31 @@
-use std::collections::HashSet;
+fn mix(mut indexes: Vec<usize>, sequence: &[isize]) -> Vec<usize> {
+    let m = sequence.len();
+    for (i, &movement) in sequence.iter().enumerate() {
+        let idx = indexes.iter().position(|&x| x == i).unwrap();
+        let moved = indexes.remove(idx);
+        indexes.insert(new_idx(idx, movement, m), moved);
+    }
+    indexes
+}
+
+fn new_idx(old_idx: usize, change: isize, modulus: usize) -> usize {
+    let (old_idx, modulus) = (old_idx as isize, modulus as isize);
+    (match change == 0 {
+        true => old_idx,
+        false => (old_idx + change - 1).rem_euclid(modulus - 1) + 1,
+    }) as usize
+}
+
+fn grove_value(mixed: &[isize]) -> isize {
+    let idx = mixed.iter().position(|&x| x == 0).unwrap();
+    (1..=3)
+        .map(|i| mixed[(1000 * i + idx) % mixed.len()])
+        .sum::<isize>()
+}
+
+fn lookup(mixed: Vec<usize>, sequence: &[isize]) -> Vec<isize> {
+    mixed.into_iter().map(|x| sequence[x]).collect()
+}
 
 fn main() {
     let input = std::fs::read_to_string("inputs/day20.txt").unwrap();
@@ -7,26 +34,17 @@ fn main() {
         .map(|l| l.trim().parse::<isize>().unwrap())
         .collect();
 
-    let m = sequence.len();
-    let mut mixed: Vec<usize> = (0..m).collect();
-    for (i, item) in sequence.iter().enumerate() {
-        let idx = mixed.iter().position(|&x| x == i).unwrap();
-        let moved = mixed.remove(idx);
-        mixed.insert(
-            (idx as isize + item + 2 * m as isize - 3) as usize % (m - 1) + 1,
-            moved,
-        );
+    let mut indexes: Vec<usize> = (0..sequence.len()).collect();
+
+    indexes = mix(indexes, &sequence);
+
+    println!("20.1 {}", grove_value(&lookup(indexes, &sequence)));
+
+    let sequence: Vec<_> = sequence.into_iter().map(|x| x * 811589153).collect();
+    let mut indexes: Vec<usize> = (0..sequence.len()).collect();
+    for _ in 0..10 {
+        indexes = mix(indexes, &sequence)
     }
-    let mixed: Vec<isize> = mixed.into_iter().map(|x: usize| sequence[x]).collect();
-    println!("{mixed:?}");
 
-    let idx = mixed.iter().position(|&x| x == 0).unwrap();
-
-    println!(
-        "20.1 {}",
-        (1..=3)
-            .map(|i| mixed[(1000 * i + idx) % m as usize])
-            .inspect(|x| println!("{x}"))
-            .sum::<isize>()
-    );
+    println!("20.2 {}", grove_value(&lookup(indexes, &sequence)));
 }
